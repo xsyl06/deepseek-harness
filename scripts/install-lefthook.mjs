@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto'
 import {
   closeSync,
   existsSync,
-  fstatSync,
   lstatSync,
   mkdirSync,
   openSync,
@@ -386,9 +385,7 @@ async function acquireInstallLock(commonDirectory) {
   while (true) {
     try {
       const lockHandle = openSync(lockPath, 'wx', 0o600)
-      let ownedStat
       try {
-        ownedStat = fstatSync(lockHandle)
         const writeDelay = Number(process.env.DSH_TEST_LEFTHOOK_LOCK_WRITE_DELAY_MS ?? 0)
         if (writeDelay > 0) {
           await new Promise(resolveWait => setTimeout(resolveWait, writeDelay))
@@ -397,14 +394,11 @@ async function acquireInstallLock(commonDirectory) {
       } finally {
         closeSync(lockHandle)
       }
-      const publishedStat = installLockStat(lockPath)
-      if (
-        publishedStat === undefined
-        || !publishedStat.isFile()
-        || publishedStat.isSymbolicLink()
-        || publishedStat.dev !== ownedStat.dev
-        || publishedStat.ino !== ownedStat.ino
-      ) {
+      // Stat via lstat (not fstat on the open handle) so dev/ino comparisons stay
+      // meaningful on Windows, where fstat reports the real device but lstat
+      // reports dev 0 for the same file.
+      const ownedStat = installLockStat(lockPath)
+      if (ownedStat === undefined || !ownedStat.isFile() || ownedStat.isSymbolicLink()) {
         throw lockOwnershipChangedError(lockPath)
       }
       return () => releaseInstallLock(lockPath, ownedRecord, ownedStat)
