@@ -1,0 +1,11 @@
+{
+  "name": "@deepseek-ai/dsh-desktop",
+  "description": "Electron shell that spawns the dsh web profile on system Node and loads it in a window",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "main.js",
+  "devDependencies": {
+    "electron": "^39.0.0"
+  }
+}
