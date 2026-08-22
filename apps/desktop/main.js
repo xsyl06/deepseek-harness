@@ -76,7 +76,8 @@ async function main() {
   const url = `http://127.0.0.1:${port}/`
   log(`spawning backend: node ${cliBin} web --port ${port}`)
 
-  const backend = spawn(process.env.DSH_DESKTOP_NODE ?? 'node', [cliBin, 'web', '--port', String(port)], {
+  // The window owns the page load, so suppress the web profile's default browser handoff.
+  const backend = spawn(process.env.DSH_DESKTOP_NODE ?? 'node', [cliBin, 'web', '--port', String(port), '--no-open'], {
     cwd: repoRoot,
     env: process.env,
     stdio: ['ignore', 'pipe', 'pipe'],
